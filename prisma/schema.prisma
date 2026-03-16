@@ -1,0 +1,46 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Goal {
+  id              String    @id @default(cuid())
+  name            String
+  description     String?
+  imageUrl        String?
+  target          Float
+  deposited       Float     @default(0)
+  status          String    @default("active") // active, successful, claimed
+  isClaimed       Boolean   @default(false)
+  deadline        DateTime?
+  walletAddress   String // goal owner's Pera address
+  depositAddress  String?   @unique // ← Algorand address for this goal
+  depositMnemonic String?
+  category        String?   @default("campus")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deposits        Deposit[]
+
+  @@index([walletAddress])
+}
+
+model Deposit {
+  id            String   @id @default(cuid())
+  goalId        String
+  goal          Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  amount        Float
+  txnId         String?  @unique // ← Algorand transaction ID
+  walletAddress String
+  timestamp     DateTime @default(now())
+  status        String   @default("pending")
+
+  @@index([goalId])
+  @@index([walletAddress])
+}
